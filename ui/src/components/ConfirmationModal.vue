@@ -1,12 +1,25 @@
 <template>
-  <div class="modal-wrapper" v-if="visible">
-    <div class="modal-overlay" @click="close"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3 class="modal-title">{{ title }}</h3>
-      </div>
-      <div class="modal-content">
-        <slot></slot>
+  <div class="stats-container-large">
+    <div class="stats-header">
+      <h2>{{ label || 'WAGON CART' }}</h2>
+      <div class="header-line"></div>
+    </div>
+    
+    <div class="stats-list">
+      <div class="stat-item">
+        
+        <div class="stat-top-row">
+           <div class="stat-numbers-wrapper center-align">
+              <span class="val-label">ความจุ</span>
+              <span class="val-max">{{ limit }}</span>
+              <span class="val-unit">ช่อง</span>
+           </div>
+        </div>
+
+        <button v-if="showActionBtn" class="action-button-small" @click="$emit('open-cargo')">
+          เปิดกระเป๋า
+        </button>
+
       </div>
     </div>
   </div>
@@ -14,23 +27,22 @@
 
 <script>
 export default {
-  name: "ConfirmationModal",
+  name: "WagonStorage",
   props: {
-    visible: {
+    limit: {
+      type: [Number, String],
+      default: 0
+    },
+    showActionBtn: {
       type: Boolean,
-      required: true,
+      default: false
     },
-    title: {
+    // เพิ่ม: รับค่าชื่อเกวียนมาแสดง
+    label: {
       type: String,
-      default: "Confirmation",
-    },
-  },
-  emits: ['close'],
-  methods: {
-    close() {
-      this.$emit("close");
-    },
-  },
+      default: ''
+    }
+  }
 };
 </script>
 

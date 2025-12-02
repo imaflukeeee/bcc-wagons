@@ -35,12 +35,8 @@
 
     <div v-else class="content-view">
       
-      <button v-if="subMode === 'list'" class="floating-back-btn" @click="goHome">
-        <i class="fas fa-chevron-left"></i> หน้าแรก
-      </button>
-
-      <button v-else class="floating-back-btn" @click="handleBack">
-        <i class="fas fa-chevron-left"></i> ย้อนกลับ
+      <button class="floating-back-btn" @click="handleSmartBack">
+        <i class="fas fa-chevron-left"></i> {{ subMode === 'list' ? 'HOME' : 'BACK' }} <span style="font-size: 10px; margin-left: 5px; opacity: 0.7;">[BACKSPACE]</span>
       </button>
 
       <template v-if="viewMode === 'wagons'">
@@ -215,35 +211,19 @@
     </div>
 
     <ConfirmationModal :visible="showBuyModal" title="ยืนยันการซื้อ" @close="showBuyModal = false">
-      <div style="text-align: center; width: 100%;">
-          <p style="font-size: 18px; margin-bottom: 5px; color: #ddd;">
-            คุณต้องการซื้อ <strong style="color: #fff;">{{ currentVariantData.label }}</strong>
-          </p>
-          <p style="font-size: 14px; opacity: 0.7; margin-bottom: 10px;">ในราคา</p>
-          
-          <h2 v-if="pendingPurchase" 
-              :style="{ 
-                  margin: '5px 0 20px 0', 
-                  fontSize: '36px',
-                  fontWeight: '700',
-                  color: pendingPurchase.currency === 'gold' ? '#FFD700' : '#FFFFFF', 
-                  textShadow: '0 2px 10px rgba(0,0,0,0.5)'
-              }">
-              <span v-if="pendingPurchase.currency === 'cash'">
-                  <span style="font-size: 0.8em; margin-right: 4px;">$</span>{{ pendingPurchase.cost }}
-              </span>
-              
-              <span v-if="pendingPurchase.currency === 'gold'">
-                  {{ pendingPurchase.cost }} <span style="font-size: 0.6em; margin-left: 5px;">GOLD</span>
-              </span>
+      <div style="text-align: center; color: #fff; margin-top: 10px;">
+          <p>คุณต้องการซื้อ <strong>{{ currentVariantData.label }}</strong></p>
+          <p style="font-size: 14px; opacity: 0.8;">ในราคา</p>
+          <h2 v-if="pendingPurchase" style="margin: 5px 0; color: #d4af37;">
+              <span v-if="pendingPurchase.currency === 'cash'">$</span>
+              {{ pendingPurchase.cost }} 
+              <span v-if="pendingPurchase.currency === 'gold'" style="font-size: 0.6em;">GOLD</span>
           </h2>
       </div>
-      
-      <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 20px;"></div>
-      
-      <div class="action-bar" style="display: flex; flex-direction: row; gap: 15px; justify-content: center; width: 100%;">
-        <button @click="confirmPurchase" class="action-btn btn-white" style="min-width: 120px;">ยืนยัน</button>
-        <button @click="showBuyModal = false" class="action-btn btn-danger" style="min-width: 120px;">ยกเลิก</button>
+      <div class="divider-menu-top" style="margin-top: 1rem; width: 100%; height: 1px; background: rgba(255,255,255,0.2);"></div>
+      <div class="action-bar" style="flex-direction: row; gap: 10px; margin-top: 20px;">
+        <button @click="confirmPurchase" class="action-btn btn-white">ยืนยัน</button>
+        <button @click="showBuyModal = false" class="action-btn btn-danger">ยกเลิก</button>
       </div>
     </ConfirmationModal>
 
@@ -301,21 +281,23 @@ export default {
     activeCarouselList() {
         if (this.viewMode === 'wagons') {
             if (this.subMode === 'list') return this.myWagons || [];
-            if (this.subMode === 'detail') return this.wagonActions;
+            if (this.subMode === 'detail') return this.wagonActions; 
         }
         if (this.viewMode === 'shop') return this.shopList;
         return [];
     },
 
+    // [FIXED] สูตรคำนวณแบบแม่นยำ (Left 50% - Shift)
     trackStyle() {
         const cardWidth = 200; 
         const gap = 20;        
-        const totalUnit = cardWidth + gap; // 220
-        const centerOffset = cardWidth / 2; // 100
+        const totalUnit = cardWidth + gap;
+        const centerOffset = cardWidth / 2;
         
-        // Shift ไปซ้ายเท่ากับ (จำนวน index ก่อนหน้า * width) + ครึ่งการ์ดของตัวปัจจุบัน
+        // สูตร: (ตำแหน่ง Index * ความกว้างรวม) + ครึ่งการ์ด
         const shiftAmount = (this.focusedIndex * totalUnit) + centerOffset;
         
+        // ลบระยะกลับอย่างเดียว เพราะ CSS ตั้ง left: 50% ไว้แล้ว
         return { transform: `translateX(-${shiftAmount}px)` };
     },
 
@@ -347,7 +329,9 @@ export default {
           this.subMode = 'list';
           this.focusedIndex = 0;
           this.newWagonName = "";
+          
           if (document.activeElement) document.activeElement.blur();
+
           if (newVal === 'shop' && this.shopList.length > 0) {
              this.previewGroup(this.shopList[0]);
           }
@@ -429,7 +413,7 @@ export default {
                 else if (e.key === 'Enter') this.selectAction(this.focusedIndex);
             }
             
-            if (e.key === 'Backspace') this.handleSmartBack(); 
+            if (e.key === 'Backspace') this.handleBack(); 
         }
     },
 
@@ -611,10 +595,9 @@ export default {
     position: absolute; top: 40px; left: 40px; 
     background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); 
     color: #fff; padding: 10px 20px; border-radius: 30px; 
-    font-family: inherit; font-weight: 500; cursor: pointer; 
-    display: flex; align-items: center; gap: 5px; z-index: 100; transition: 0.3s; 
+    cursor: pointer; z-index: 100; transition: 0.3s; 
 }
-.floating-back-btn:hover { background: #fff; color: #000; border-color: #fff; }
+.floating-back-btn:hover { background: #fff; color: #000; }
 
 .close-btn { position: absolute; top: 30px; right: 30px; background: transparent; border: none; color: #666; font-size: 20px; cursor: pointer; z-index: 100; }
 .close-btn:hover { color: #fff; transform: rotate(90deg); }
@@ -622,10 +605,11 @@ export default {
 .carousel-wrapper { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
 .carousel-track-container { width: 100%; height: 220px; overflow: hidden; position: relative; mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%); }
 
+/* [FIXED] ใช้ left: 50% ใน CSS เพื่อให้สอดคล้องกับสูตร JS */
 .carousel-track { 
     display: flex; gap: 20px; 
     position: absolute; 
-    left: 50%; 
+    left: 50%; /* จุดเริ่มที่กึ่งกลางจอ */
     top: 50%; 
     transform-origin: 0 0; 
     margin-top: -80px; 
@@ -681,5 +665,6 @@ export default {
 
 .empty-state-view { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
 .shop-list-header { position: absolute; top: 10%; width: 100%; text-align: center; pointer-events: none; z-index: 20; }
+/* Action Button (Modal) */
 .action-btn { width: auto; padding: 10px 25px; border: none; border-radius: 4px; font-family: inherit; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; transition: all 0.3s ease; }
 </style>
